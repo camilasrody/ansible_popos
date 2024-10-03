@@ -7,23 +7,31 @@
     state: present
 
 - name: Configurar repositório bare para dotfiles
+  become: yes
+  become_user: cr
   git:
     repo: 'git@github.com:camilasrody/dotfiles.git'
     version: master
     bare: yes
+    dest: '~/.dotfiles'
     accept_hostkey: yes
-    dest: '{{ ansible_env.HOME }}/.dotfiles'
-    key_file: '{{ ansible_env.HOME }}/.ssh/id_ed25519'
+    key_file: '~/.ssh/id_ed25519'
 
 - name: Configurar alias para gerenciar dotfiles
+  become: yes
+  become_user: cr
   lineinfile:
-    path: '{{ ansible_env.HOME }}/.bashrc'
-    line: "alias dotfiles='/usr/bin/git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }}'"
+    path: '~/.bashrc'
+    line: "alias dotfiles='/usr/bin/git --git-dir=~/.dotfiles/ --work-tree=~'"
     create: yes
 
 - name: Configurar Git para não mostrar arquivos não rastreados
-  command: git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }} config --local status.showUntrackedFiles no
+  become: yes
+  become_user: cr
+  command: git --git-dir=~/.dotfiles/ --work-tree=~ config --local status.showUntrackedFiles no
 
 - name: Checkout dos dotfiles
-  command: git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }} checkout
+  become: yes
+  become_user: cr
+  command: git --git-dir=~/.dotfiles/ --work-tree=~ checkout
   ignore_errors: yes
