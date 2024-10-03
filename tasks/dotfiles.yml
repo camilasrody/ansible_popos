@@ -1,8 +1,33 @@
-### Dot files management
+### Gerenciamento de Dotfiles
 
-#- name: copy .bashrc file
-#  copy:
-#    src: files/bashrc
-#    dest: /home/cr/.bashrc
-#    owner: cr
-#    group: cr
+- name: Instalar Git
+  become: yes
+  package:
+    name: git
+    state: present
+
+- name: Configurar repositório bare para dotfiles
+  become_user: cr
+  git:
+    repo: 'git@github.com:camilasrody/dotfiles.git'
+    version: master
+    bare: yes
+    accept_hostkey: yes
+    dest: '{{ ansible_env.HOME }}/.dotfiles'
+    key_file: '{{ ansible_env.HOME }}/.ssh/id_ed25519'
+
+- name: Configurar alias para gerenciar dotfiles
+  become_user: cr
+  lineinfile:
+    path: '{{ ansible_env.HOME }}/.bashrc'
+    line: "alias dotfiles='/usr/bin/git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }}'"
+    create: yes
+
+- name: Configurar Git para não mostrar arquivos não rastreados
+  become_user: cr
+  command: git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }} config --local status.showUntrackedFiles no
+
+- name: Checkout dos dotfiles
+  become_user: cr
+  command: git --git-dir={{ ansible_env.HOME }}/.dotfiles/ --work-tree={{ ansible_env.HOME }} checkout
+  ignore_errors: yes
