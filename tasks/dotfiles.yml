@@ -4,5 +4,5 @@
 #  copy:
 #    src: files/bashrc
 #    dest: /home/cr/.bashrc
-#    owner: chris
-#    group: chris
+#    owner: cr
+#    group: cr
