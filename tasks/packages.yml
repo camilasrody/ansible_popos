@@ -1,4 +1,9 @@
 ---
+- name: Adicionar repositório do lsd
+  apt_repository:
+    repo: ppa:lsd-team/lsd
+    state: present
+
 - name: Install apt packages
   package:
     name:
@@ -11,7 +16,8 @@
       - git-icdiff
       - tar
       - wget
-
+    update_cache: yes
+    
 - name: Check if Go is installed
   command: go version
   register: go_installed
