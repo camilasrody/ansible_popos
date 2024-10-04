@@ -7,6 +7,8 @@
       - gnome-tweaks
       - neofetch
       - btop
+      - lsd
+      - git-icdiff
       - tar
       - wget
 
