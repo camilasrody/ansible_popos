@@ -1,10 +1,11 @@
 ### Gerenciamento de Dotfiles
 
-- name: Instalar Git
+- name: Verificar se o repositório de dotfiles já existe
   become: yes
-  package:
-    name: git
-    state: present
+  become_user: cr
+  stat:
+    path: '~/.dotfiles-bare'
+  register: dotfiles_repo
 
 - name: Configurar repositório bare para dotfiles
   become: yes
@@ -13,25 +14,61 @@
     repo: 'git@github.com:camilasrody/dotfiles.git'
     version: master
     bare: yes
-    dest: '~/.dotfiles'
+    dest: '~/.dotfiles-bare'
     accept_hostkey: yes
     key_file: '~/.ssh/id_ed25519'
+  when: not dotfiles_repo.stat.exists
 
-- name: Configurar alias para gerenciar dotfiles
+- name: Verificar se existem mudanças não comitadas
   become: yes
   become_user: cr
-  lineinfile:
-    path: '~/.bashrc'
-    line: "alias dotfiles='/usr/bin/git --git-dir=~/.dotfiles/ --work-tree=~'"
-    create: yes
+  command: git --git-dir=$HOME/.dotfiles-bare --work-tree=$HOME status --porcelain
+  register: git_status
+  when: not dotfiles_repo.stat.exists
+
+- name: Fazer stash se houver mudanças não comitadas
+  become: yes
+  become_user: cr
+  command: git --git-dir=$HOME/.dotfiles-bare --work-tree=$HOME stash
+  when: not dotfiles_repo.stat.exists and git_status.stdout | length > 0
+
+- name: Git | Overwrite distro default dotfiles on the first run
+  become_user: "cr"
+  command: git --git-dir=$HOME/.dotfiles-bare --work-tree=$HOME reset --hard
+  when: not dotfiles_repo.stat.exists
 
 - name: Configurar Git para não mostrar arquivos não rastreados
   become: yes
-  become_user: cr
-  command: git --git-dir=~/.dotfiles/ --work-tree=~ config --local status.showUntrackedFiles no
+  become_user: "cr"
+  git_config:
+    name: status.showUntrackedFiles
+    scope: local
+    repo: '~/.dotfiles-bare'
+    value: 'no'
 
-- name: Checkout dos dotfiles
+- name: Desativar a opção bare no Git para evitar erro fatal
   become: yes
-  become_user: cr
-  command: git --git-dir=~/.dotfiles/ --work-tree=~ checkout
-  ignore_errors: yes
+  become_user: "cr"
+  git_config:
+    name: core.bare
+    scope: local
+    repo: "~/.dotfiles-bare"
+    value: 'false'
+
+- name: Habilitar sparse checkout no Git
+  become: yes
+  become_user: "cr"
+  git_config:
+    name: core.sparseCheckout
+    scope: local
+    repo: "~/.dotfiles-bare"
+    value: 'true'
+
+- name: Git | Create symbolic link
+  become_user: "cr"
+  file:
+    src: "~/.dotfiles-bare"
+    dest: "~/.git"
+    owner: "cr"
+    group: "cr"
+    state: link
