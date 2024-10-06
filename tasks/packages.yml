@@ -1,8 +1,8 @@
 ---
-- name: Adicionar repositório do lsd
-  apt_repository:
-    repo: ppa:lsd-team/lsd
-    state: present
+#- name: Adicionar repositório ao apt
+#  apt_repository:
+#    repo: ppa:
+#    state: present
 
 - name: Install apt packages
   package:
@@ -12,12 +12,13 @@
       - gnome-tweaks
       - neofetch
       - btop
-      - lsd
-      - git-icdiff
+      - icdiff
       - tar
       - wget
+      - rustc
+      - cargo
     update_cache: yes
-    
+
 - name: Check if Go is installed
   command: go version
   register: go_installed
@@ -50,3 +51,6 @@
     path: /tmp/go.tar.gz
     state: absent
   when: go_installed.rc != 0  # Only clean up if Go was downloaded
+
+- name: Update font cache
+  command: fc-cache -fv

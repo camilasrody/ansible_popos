@@ -17,6 +17,8 @@
     dest: '~/.dotfiles-bare'
     accept_hostkey: yes
     key_file: '~/.ssh/id_ed25519'
+    update: yes
+    register: git_result
   when: not dotfiles_repo.stat.exists
 
 - name: Verificar se existem mudanças não comitadas
@@ -36,6 +38,16 @@
   become_user: "cr"
   command: git --git-dir=$HOME/.dotfiles-bare --work-tree=$HOME reset --hard
   when: not dotfiles_repo.stat.exists
+
+- name: Verificar se houve mudanças no repositório
+  become_user: "cr"
+  debug:
+    msg: "Mudanças detectadas nos dotfiles."
+  when: git_result.after != git_result.before
+
+# - name: Executar script de provisionamento se houver mudanças
+#   command: /usr/local/bin/provision.sh
+#   when: git_result.after != git_result.before
 
 - name: Configurar Git para não mostrar arquivos não rastreados
   become: yes
